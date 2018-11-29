@@ -76,7 +76,11 @@ namespace SudokuSolver
         {
             again:
             if (_cells.All(c => c.Count == 1))
+            {
+                if (!VerifySolved())
+                    throw new Exception();
                 return; // it's solved
+            }
             bool anyChanges = false;
 
             // Part 1: if we have N identical cells with N possibilities then none of the other cells can have any of these possibilities
@@ -125,6 +129,8 @@ namespace SudokuSolver
                     clone._cells[c].SetKnown(num);
                     try { clone.Solve(); }
                     catch { continue; }
+                    if (!clone.VerifySolved())
+                        continue;
                     // Success! It's solved.
                     foreach (var pair in clone._cells.Zip(_cells, (cc, oc) => new { cc, oc }))
                         pair.oc.CopyFrom(pair.cc);
@@ -133,6 +139,23 @@ namespace SudokuSolver
             }
 
             throw new Exception(); // not solved - contradictory?
+        }
+
+        private bool VerifySolved()
+        {
+            foreach (var set in _sets)
+            {
+                var have = new bool[9];
+                foreach (var cell in set)
+                {
+                    if (cell.Count != 1)
+                        return false;
+                    have[cell.Single() - 1] = true;
+                }
+                if (!have.All(v => v))
+                    return false;
+            }
+            return true;
         }
 
         public void Parse(string s)
